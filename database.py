@@ -12,7 +12,7 @@ load_dotenv()
 # userPort = 3306
 
 try:
-    connection = mariadb.connect(
+    mConnect = mariadb.connect(
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST"),
@@ -27,7 +27,7 @@ try:
     #     database="task_listing",
     # )
 
-    cursor = connection.cursor()
+    cursor = mConnect.cursor()
 
 except mariadb.Error as error:
     print(f"Error connecting to MariaDB Platform: {error}")
