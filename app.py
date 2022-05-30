@@ -111,6 +111,25 @@ def viewAllTasks():
 def markTaskAsDone():
     pass
 
+def viewCategory():
+    print("\t---- All categories ----\n")
+    categoryChoice = list(0)
+
+    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])
+    try:
+        cursor.execute(
+            "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],)
+        )
+        tasks = cursor.fetchall()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
+
+    index = 1
+    print("\tTasks:")
+    for title in tasks:
+        print(f"\t\t[{index}]" + title[1])
+        index += 1
+
 def createCategory():
     print("---- Create Category ----\n")
     category_input = input("Enter the category title: ")
@@ -133,29 +152,23 @@ def createCategory():
     mConnect.commit()
 
 def editCategory():
-    pass
+    print("\t---- Edit category ----\n")
+    categoryChoice = list(0)
+
+    while True:
+        print("[1] Category name\n[2] Category description\n")
+        choiceInput = int(input("What do you want to edit (0 to exit): "))
+        if (choiceInput == 0): 
+            changeNameInput = input(">> Enter new category name: ")
+        elif (choiceInput == 1):
+            changeDescInput = input(">> Enter new category description: ")
+
+    cursor.execute(
+        "UPDATE category SET"
+    )
 
 def deleteCategory():
     pass
-
-def viewCategory():
-    print("\t---- All categories ----\n")
-    categoryChoice = list(0)
-
-    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])
-    try:
-        cursor.execute(
-            "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],)
-        )
-        tasks = cursor.fetchall()
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-
-    index = 1
-    print("\tTasks:")
-    for title in tasks:
-        print(f"\t\t[{index}]" + title[1])
-        index += 1
 
 def addTaskToCategory():
     pass
