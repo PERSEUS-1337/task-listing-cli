@@ -23,7 +23,7 @@ def list(type):
     index = 0
 
     for value in query:
-        print(f"[{index}] {query[0]} - {query[2]}")
+        print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
 
     if (type == 0): selected = int(input("Enter the index of the chosen category: "))
@@ -106,18 +106,31 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        cursor.execute("SELECT name FROM category WHERE category_id = ?", (categoryId,))
-        category = cursor.fetchone()
-
-        categoryName = category and category[0]
-
-        printTask(categoryName, title, content, deadline, isDone)
+        printTask(getCatName(categoryId), title, content, deadline, isDone)
 
 def markTaskAsDone():
     pass
 
 def createCategory():
-    pass
+    print("---- Create Category ----\n")
+    category_input = input("Enter the category title: ")
+    descripton_input = input("(Optional) Description: ")
+        
+    # To get new task_id: Get the highest task-id in task table then add one.
+    cursor.execute(
+        "SELECT MAX(category_id)+1 FROM category"
+    )
+    id = cursor.fetchone()[0]
+
+    # Values of the new task in tuple
+    args = (id, category_input, descripton_input)
+
+    # Insert the values of the new task to the task table
+    cursor.execute(
+        "INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args
+    )
+
+    mConnect.commit()
 
 def editCategory():
     pass
@@ -127,45 +140,47 @@ def deleteCategory():
 
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = listCategory()
-    print(categoryChoice[0])
+    categoryChoice = list(0)
+    print(categoryChoice)
 
     try: 
         cursor.execute(
-            "SELECT name, category_id, description FROM category WHERE name = (?)", (categoryChoice)
+            "SELECT name, category_id, description FROM category WHERE name = (%s)", (categoryChoice)
         )
         categories = cursor.fetchall()
+        print(categories)
+        print(categories[0])
+        print(categories[0][0])
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}") 
 
-    # print(categories)
     print("\t---- Selected category ----\n")
     for name, category_id, description in categories:
         print("\t[" + name + "]\n\tDescription: " + description)
 
-        cursor.execute(
-            "SELECT category_id, title FROM task WHERE category_id = (?)", (categoryChoice)
-        )
-        tasks = cursor.fetchall()
+        try:
+            cursor.execute(
+                "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice)
+            )
+            tasks = cursor.fetchall()
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+
         index = 1
         print("\tTasks:")
         for title in tasks:
             print(f"\t\t[{index}]" + title[1])
-            # ++index
             index += 1
 
 def addTaskToCategory():
     pass
 
-
 def viewTaskByCalendar(): 
     pass
-
 
 def quitApp():
     print("Quitting application\n")
     sys.exit(1)
-
 
 actions = {
     "ct": {"name": "Create task", "function": createTask},
@@ -209,7 +224,7 @@ def main():
         else:
             print("Action code not recognized\n")
 
-        input("Press Enter to continue...")
+        input("\nPress Enter to continue...")
 
 
 if __name__ == "__main__":
