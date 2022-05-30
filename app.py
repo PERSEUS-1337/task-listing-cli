@@ -97,6 +97,7 @@ def editTask():
     while(True):
         print("Information of Task to Edit")
         printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
+        
 
 def deleteTask():
     pass
@@ -110,7 +111,8 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        printTask(getCatName(categoryId), title, content, deadline, isDone)
+        if (categoryId == None): (printTask(None, title, content, deadline, isDone))
+        else: printTask(getCatName(categoryId), title, content, deadline, isDone)
 
 def markTaskAsDone():
     pass
