@@ -141,36 +141,21 @@ def deleteCategory():
 def viewCategory():
     print("\t---- All categories ----\n")
     categoryChoice = list(0)
-    print(categoryChoice)
 
-    try: 
+    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])
+    try:
         cursor.execute(
-            "SELECT name, category_id, description FROM category WHERE name = (%s)", (categoryChoice)
+            "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],)
         )
-        categories = cursor.fetchall()
-        print(categories)
-        print(categories[0])
-        print(categories[0][0])
+        tasks = cursor.fetchall()
     except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}") 
+        print(f"Error connecting to MariaDB Platform: {e}")
 
-    print("\t---- Selected category ----\n")
-    for name, category_id, description in categories:
-        print("\t[" + name + "]\n\tDescription: " + description)
-
-        try:
-            cursor.execute(
-                "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice)
-            )
-            tasks = cursor.fetchall()
-        except mariadb.Error as e:
-            print(f"Error connecting to MariaDB Platform: {e}")
-
-        index = 1
-        print("\tTasks:")
-        for title in tasks:
-            print(f"\t\t[{index}]" + title[1])
-            index += 1
+    index = 1
+    print("\tTasks:")
+    for title in tasks:
+        print(f"\t\t[{index}]" + title[1])
+        index += 1
 
 def addTaskToCategory():
     pass
