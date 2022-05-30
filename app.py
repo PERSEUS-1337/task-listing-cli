@@ -23,7 +23,7 @@ def list(type):
     index = 0
 
     for value in query:
-        print(f"[{index}] {query[0]} - {query[2]}")
+        print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
 
     if (type == 0): selected = int(input("Enter the index of the chosen category: "))
@@ -92,7 +92,11 @@ def editTask():
 
     taskTuple = cursor.fetchone() # tuple containing current values of the selected task
 
-    printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
+    flag = True
+
+    while(True):
+        print("Information of Task to Edit")
+        printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
 
 def deleteTask():
     pass
@@ -106,12 +110,7 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        cursor.execute("SELECT name FROM category WHERE category_id = ?", (categoryId,))
-        category = cursor.fetchone()
-
-        categoryName = category and category[0]
-
-        printTask(categoryName, title, content, deadline, isDone)
+        printTask(getCatName(categoryId), title, content, deadline, isDone)
 
 def markTaskAsDone():
     pass
@@ -127,7 +126,7 @@ def deleteCategory():
 
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = listCategory()
+    categoryChoice = list(0)
     print(categoryChoice[0])
 
     try: 
