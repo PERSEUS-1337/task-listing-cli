@@ -2,7 +2,15 @@ from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
 
+def dateInput():
+    month = int(input("Month (MM): "))
+    day = int(input("Day (DD): "))
+    year = int(input("Year (YYYY): "))
+    date = "{}-{}-{}".format(year, month, day)
+    return date
+
 def getCatName(catID):
+    if (catID == None): return None
     cursor.execute(
         "SELECT name FROM category where category_id = {}".format(catID)
     )
@@ -26,9 +34,17 @@ def list(type):
         print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
 
-    if (type == 0): selected = int(input("Enter the index of the chosen category: "))
-    elif (type == 1): selected = int(input("Enter the index of the chosen task: "))
-    return query[selected]
+    while (True):
+        if (type == 0): 
+            print("Write !NULL for NULL")
+            selected = (input("Enter the index of the chosen category: "))
+            if (selected == "!NULL"): return None
+        elif (type == 1): selected = input("Enter the index of the chosen task: ")
+
+        print(index)
+
+        if int(selected) in range(0, index): return query[int(selected)]
+    
 
 def printTask(categoryName, title, content, deadline, isDone):
     print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
@@ -55,10 +71,7 @@ def createTask():
     while (flag == True):
         deadline_flag = input("Does your task have a deadline? (Y/N)\n")
         if (deadline_flag == "Y"):
-            month = int(input("Month (MM): "))
-            day = int(input("Day (DD): "))
-            year = int(input("Year (YYYY)"))
-            deadline = "{}-{}-{}".format(year, month, day)
+
             flag = False
         elif (deadline_flag == "N"):
             deadline = None
@@ -86,21 +99,106 @@ def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
 
-    cursor.execute(
-        "SELECT * FROM task WHERE task_id = {}".format(task)
-    )
-
-    taskTuple = cursor.fetchone() # tuple containing current values of the selected task
-
     flag = True
 
-    while(True):
+    while(flag):
+        cursor.execute(
+            "SELECT * FROM task WHERE task_id = {}".format(task)
+        )
+        taskTuple = cursor.fetchone() # tuple containing current values of the selected task
+
         print("Information of Task to Edit")
-        printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
+        printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # CatName, title, content, deadline, isDone
+
+        print("What would you like to edit? WARNING: CHANGE IS PERMANENT\n")
+        print("[1] Title | [2] Content | [3] Category of Task | [4] Deadline | [5] Done!")
+
+        choice = int(input("Choice: "))
+
+        if (choice == 1):
+            newTitle = input("New Title: ")
+            cursor.execute(
+                "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
+            )
+        elif (choice == 2):
+            print("Write !NULL for NULL")
+            newContent = input("New Content: ")
+            if (newContent == "!NULL"):
+                cursor.execute(
+                    "UPDATE task SET content=NULL WHERE task_id=%s", (task,)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE task SET content=%s WHERE task_id=%s", (newContent, task)
+                )
+        elif (choice == 3):
+            category = list(0)
+            if (category == None): 
+                cursor.execute(
+                    "UPDATE task SET category_id=NULL WHERE task_id=%s", (task,)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE task SET category_id=%s WHERE task_id=%s", (category[1], task)
+                )
+        elif (choice == 4):
+            print("Write !NULL for NULL")
+            deadline = dateInput()
+            cursor.execute(
+                "UPDATE task SET deadline=%s WHERE task_id=%s", (deadline, task)
+            )
+        elif (choice == 5):
+            flag = False
+
+
+        # print("If you don't want to change the value, just press ENTER.")
+        # print("If you want to change the value to NULL, write !NULL")
+        # newTitle = input("Title: ") or taskTuple[2]
+        # if (newTitle == "!NULL"): 
+        #     print("Title can't be null. Restoring old title.")
+        #     newTitle = taskTuple[2]
+        # newContent = taskTuple[3]
+        # if (newContent == "!NULL"): newContent = None
+
+        # while (True):
+        #     changeDead = ("Do you want to change the deadline of the task (Y/N/!NULL)? ")
+        #     if (changeDead == "!NULL"):
+        #         newDeadline = None
+        #         break
+        #     elif (changeDead == "Y"): 
+        #         newDeadline = dateInput()
+        #         break
+        #     elif (changeDead == "N"):
+        #         newDeadline = taskTuple[4]
+        #         break
+
+        # while (True):
+        #     changeCat = input("Do you want to change the category of the task (Y/N/!NULL)? ")
+        #     if (changeCat == "!NULL"):
+        #         newCategory = None
+        #         break
+        #     elif (changeCat == "Y"): 
+        #         category = list(0)
+        #         newCategory = category[1]
+        #         break
+        #     elif (changeCat == "N"):
+        #         newCategory = taskTuple[1]
+        #         break
+
+        # printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # CatName, title, content, deadline, isDone
+        # while (True):
+        #     quit = input("Are you satisfied with the changes (Y/N)? ")
+        #     if (quit == "Y"): 
+        #         flag = False
+        #         break
+        #     if (quit == "N"):
+        #         break
+
         
 
 def deleteTask():
-    pass
+    stack = input("Input: ") or "stack"
+    print(stack)
 
 def viewAllTasks():
     print("\t---- All tasks ----\n")
