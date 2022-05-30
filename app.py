@@ -1,5 +1,6 @@
 import sys
 from database import cursor
+from database import mariadb
 
 
 def printTask(categoryName, title, content, deadline, isDone):
@@ -17,6 +18,22 @@ def printTask(categoryName, title, content, deadline, isDone):
         print("\tDeadline:", deadline)
 
     print()
+
+# def printCategory(categoryName, title, content, deadline, isDone):
+#     print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
+
+#     if isDone:
+#         print("\t(FINISHED)" + title)
+#     else:
+#         print("\t" + title)
+
+#     if content:
+#         print("\t-", content)
+
+#     if deadline:
+#         print("\tDeadline:", deadline)
+
+#     print()
 
 
 def createTask():
@@ -64,9 +81,54 @@ def deleteCategory():
     pass
 
 
-def viewCategory():
-    pass
+def listCategory():
+    try:
+        cursor.execute(
+            "SELECT name, category_id FROM category ORDER BY name"
+            # "SELECT name, category_id, description FROM category ORDER BY name"
+        )
+        categories = cursor.fetchall()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
 
+    index = 0
+    for name in categories:
+        print(f"[{index}] {name[0]}")
+        index += 1
+
+    selected = int(input("Enter the index of the chosen category: "))
+
+    return categories[selected]
+
+
+def viewCategory():
+    print("\t---- All categories ----\n")
+    categoryChoice = listCategory()
+    print(categoryChoice[0])
+
+    try: 
+        cursor.execute(
+            "SELECT name, category_id, description FROM category WHERE name = (?)", (categoryChoice)
+        )
+        categories = cursor.fetchall()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}") 
+
+    # print(categories)
+    print("\t---- Selected category ----\n")
+    for name, category_id, description in categories:
+        print("\t[" + name + "]\n\tDescription: " + description)
+
+        cursor.execute(
+            "SELECT category_id, title FROM task WHERE category_id = (?)", (categoryChoice)
+        )
+        tasks = cursor.fetchall()
+        index = 1
+        print("\tTasks:")
+        for title in tasks:
+            print(f"\t\t[{index}]" + title[1])
+            # ++index
+            index += 1
 
 def addTaskToCategory():
     pass

@@ -1,3 +1,7 @@
+-- If you don't know the hostname and port number, connect to the database and execute the following SQL command:
+SHOW variables WHERE `variable_name` IN ("hostname", "port");
+
+
 DROP DATABASE IF EXISTS task_listing;
 CREATE DATABASE task_listing;
 USE task_listing;
