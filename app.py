@@ -1,6 +1,6 @@
 from multiprocessing import connection
 import sys
-from database import cursor, mConnect
+from database import cursor, mConnect, mariadb
 
 def getCatName(catID):
     cursor.execute(
@@ -19,16 +19,16 @@ def list(type):
             "SELECT title, task_id, content FROM task ORDER BY title"
         )
     
-    categories = cursor.fetchall()
+    query = cursor.fetchall()
     index = 0
 
-    for name in categories:
-        print(f"[{index}] {name[0]} - {name[2]}")
+    for value in query:
+        print(f"[{index}] {query[0]} - {query[2]}")
         index += 1
 
     if (type == 0): selected = int(input("Enter the index of the chosen category: "))
     elif (type == 1): selected = int(input("Enter the index of the chosen task: "))
-    return categories[selected]
+    return query[selected]
 
 def printTask(categoryName, title, content, deadline, isDone):
     print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
@@ -82,7 +82,6 @@ def createTask():
 
     mConnect.commit()
 
-
 def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
@@ -95,15 +94,8 @@ def editTask():
 
     printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
 
-    printW
-
-
-
-
-
 def deleteTask():
     pass
-
 
 def viewAllTasks():
     print("\t---- All tasks ----\n")
@@ -121,42 +113,17 @@ def viewAllTasks():
 
         printTask(categoryName, title, content, deadline, isDone)
 
-
 def markTaskAsDone():
     pass
-
 
 def createCategory():
     pass
 
-
 def editCategory():
     pass
 
-
 def deleteCategory():
     pass
-
-
-def listCategory():
-    try:
-        cursor.execute(
-            "SELECT name, category_id FROM category ORDER BY name"
-            # "SELECT name, category_id, description FROM category ORDER BY name"
-        )
-        categories = cursor.fetchall()
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-
-    index = 0
-    for name in categories:
-        print(f"[{index}] {name[0]}")
-        index += 1
-
-    selected = int(input("Enter the index of the chosen category: "))
-
-    return categories[selected]
-
 
 def viewCategory():
     print("\t---- All categories ----\n")
