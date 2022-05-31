@@ -2,21 +2,30 @@ from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
 
-# Create global variables for:
-# Choice Indexing
-# List Type
-# Order of name, category_id, task_id, etc
-# Index in fetchone/fetchall
-# Index in list return query 
+def dateInput():    # asks the user for a Date (Deadline)
+    print("Deadline: [Write !NULL on Month if no Deadline]")
+    dayInMonth = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) # Days in every month. February set to 29.
+    while (True):   # Prevent invalid input for Month
+        month = (input("Month (MM): "))
+        if (month == "!NULL"): return None  # No Deadline
+        if (int(month) in range(1,13)):     # Check if Month is Valid
+            month = int(month)
+            break
+    while (True):   # prevent invalid input for Day
+        day = int(input("Day (DD): "))      
+        if (day in range(1,dayInMonth[month]+1)): break # Using the dayInMonth tuple, would check if day valid in accordance with selected Month
+    year = int(input("Year (YYYY): "))
+    date = "{}-{}-{}".format(year, month, day)  # Format accepted by SQL
+    return date
 
-def getCatName(catID):
+def getCatName(catID):  # returns the category_name, accepts category_id as parameter
+    if (catID == None): return None     # No Category
     cursor.execute(
         "SELECT name FROM category where category_id = {}".format(catID)
     )
-
     return cursor.fetchone()[0]
 
-def list(type):
+def list(type): # lists tasks/categories with index, to make it easier for the user to select.
     if (type == 0) : # type = 0 is for category
         cursor.execute(
             "SELECT name, category_id, description FROM category ORDER BY name"
@@ -29,13 +38,19 @@ def list(type):
     query = cursor.fetchall()
     index = 0                   
 
+    # Prints the [index] Title - Description
     for value in query:
         print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
 
-    if (type == 0): selected = int(input("Enter the index of the chosen category: "))
-    elif (type == 1): selected = int(input("Enter the index of the chosen task: "))
-    return query[selected]
+    while (True): # prevents out of bound index inputs
+        if (type == 0): # for category
+            selected = (input("Enter the index of the chosen category [Write !NULL for NULL]: "))
+            if (selected == "!NULL"): return None # No category
+        elif (type == 1): selected = input("Enter the index of the chosen task: ") # for task
+
+        if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
+    
 
 def printTask(categoryName, title, content, deadline, isDone):
     print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
@@ -53,25 +68,18 @@ def printTask(categoryName, title, content, deadline, isDone):
 
     print()
 
-def createTask():
+def createTask(): # create/add new task
     print("---- Create Task ----\n")
     title_input = (input("Enter the task title: "))
-    content_input = input("(Optional) Contents: ")
+    content_input = input("Contents: ")
 
-    flag = True
-    while (flag == True):
-        deadline_flag = input("Does your task have a deadline? (Y/N)\n")
-        if (deadline_flag == "Y"):
-            month = int(input("Month (MM): "))
-            day = int(input("Day (DD): "))
-            year = int(input("Year (YYYY)"))
-            deadline = "{}-{}-{}".format(year, month, day)
-            flag = False
-        elif (deadline_flag == "N"):
-            deadline = None
-            flag = False
-        
-    category = list(0)[1] # category_id of selected category
+    print("\nEnter Deadline of Task: ")
+    deadline = dateInput()
+    
+    print("\nCategory of Task:")
+    category = list(0) # category tuple if a category is selected, None if no category is selected
+    if (category != None): # checks if category is a category tuple
+        category = category[1] # category_id
 
     # To get new task_id: Get the highest task-id in task table then add one.
     cursor.execute(
@@ -89,20 +97,66 @@ def createTask():
 
     mConnect.commit()
 
+def updateSQL(newValue, task, attrib): # update the task table, one attribute at a time | Parameters: new value, task_id, attribute to be changed
+    if ((newValue == "!NULL") or (newValue == None)): # dedicated SQL for NULL values since None doesn't work.
+        cursor.execute(
+            "UPDATE task SET " + attrib + "=NULL WHERE task_id={}".format(task)
+        )
+    else:
+        cursor.execute(
+            "UPDATE task SET " +  attrib + "=%s WHERE task_id=%s", (newValue, task)
+        )
+
+    mConnect.commit()
+
 def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
 
+    flag = True
+    while(flag):
+        cursor.execute(
+            "SELECT * FROM task WHERE task_id = {}".format(task)
+        )
+        taskTuple = cursor.fetchone() # tuple containing current values of the selected task
+
+        print("\nInformation of Task to Edit")
+        printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # category_name, title, content, deadline, is_done
+
+        print("What would you like to edit? WARNING: CHANGE IS PERMANENT")
+        print("[1] Title | [2] Content | [3] Category of Task | [4] Deadline | [5] Done!")
+
+        choice = (input("Choice: "))
+        print()
+
+        if ((choice) == "1"): # Title
+            # title doesn't use updateSQL since it can't be NULL.
+            newTitle = input("New Title: ")
+            cursor.execute(
+                "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
+            )
+        elif (choice == "2"): # Content
+            newContent = input("New Content [Write !NULL for NULL]: ")
+            updateSQL(newContent, task, 'content')
+        elif (choice == "3"): # Category
+            category = list(0)
+            if (category != None): category = category[1]
+            updateSQL(category, task, 'category_id')
+        elif (choice == "4"): # Deadline
+            print("Write !NULL for NULL")
+            deadline = dateInput()
+            updateSQL(deadline, task, 'deadline')
+        elif (choice == "5"): # Exit
+            flag = False    
+        else: print("Invalid Choice.")
+
+def deleteTask():    
+    print("\t---- Delete Tasks ----\n")
+    task = list(1)[1] # task_id of selected task
     cursor.execute(
-        "SELECT * FROM task WHERE task_id = {}".format(task)
+        "DELETE FROM task WHERE task_id={}".format(task)
     )
-
-    taskTuple = cursor.fetchone() # tuple containing current values of the selected task
-
-    printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5])
-
-def deleteTask():
-    pass
+    mConnect.commit()
 
 def viewAllTasks():
     print("\t---- All tasks ----\n")
@@ -113,10 +167,41 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        printTask(getCatName(categoryId), title, content, deadline, isDone)
+        if (categoryId == None): (printTask(None, title, content, deadline, isDone))
+        else: printTask(getCatName(categoryId), title, content, deadline, isDone)
+
+def doneTask(is_done, index): # similar to list but specialized for markTaskAsDone()
+    cursor.execute( 
+        "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(is_done)
+    )
+    query = cursor.fetchall()
+
+    # prints:
+    #   if no category: [index] Title - Description
+    #   if with category: [index] [category_name] Title - Description
+    for value in query:
+        if (value[3] == None): print(f"\t[{index}] {value[0]} - {value[2]}")
+        else: print(f"\t[{index}] [{getCatName(value[3])}] {value[0]} - {value[2]}")
+        index += 1
+
+    return (query, index) # returns the 2d tasks tuple, and the index
 
 def markTaskAsDone():
-    pass
+    print("\t---- Change Task Status ----\n")
+    print("[UNFINISHED TASKS] (Select task to Mark as DONE)")
+    unfinished = doneTask(0, 0) # 0 for False, 0 as index |
+    print("\n[FINISHED TASKS] (Select task to Mark as NOT DONE)")
+    finished = doneTask(1, unfinished[1]) # 1 for True, index returned by first doneTask()
+
+    selected = int(input("\nEnter the index of the chosen task: "))
+    if (selected in range(0, unfinished[1])): # checks if selected is in unfinished
+        updateSQL(1, unfinished[0][selected][1], 'is_done') # Parameters: True, category_id of selected task, attribute to be changed
+    elif (selected in range(unfinished[1], finished[1])): # checks if selected is in finished
+        selected -= unfinished[1] # change the value of selected to be accurate with index of finished[0] (2d finished tuple)
+        updateSQL(0, finished[0][selected][1], 'is_done') # Parameters: False, category_id of selected task, attribute to be changed
+    else: print("Invalid index.")
+
+    mConnect.commit()
 
 def viewCategory():
     print("\t---- All categories ----\n")
