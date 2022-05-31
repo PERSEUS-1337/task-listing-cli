@@ -50,8 +50,6 @@ def list(type):
             if (selected == "!NULL"): return None
         elif (type == 1): selected = input("Enter the index of the chosen task: ")
 
-        print(index)
-
         if int(selected) in range(0, index): return query[int(selected)]
     
 
@@ -148,9 +146,13 @@ def editTask():
             mConnect.commit()
             flag = False    
 
-def deleteTask():
-    stack = input("Input: ") or "stack"
-    print(stack)
+def deleteTask():    
+    print("\t---- Delete Tasks ----\n")
+    task = list(1)[1] # task_id of selected task
+    cursor.execute(
+        "DELETE FROM task WHERE task_id={}".format(task)
+    )
+    mConnect.commit()
 
 def viewAllTasks():
     print("\t---- All tasks ----\n")
@@ -164,8 +166,35 @@ def viewAllTasks():
         if (categoryId == None): (printTask(None, title, content, deadline, isDone))
         else: printTask(getCatName(categoryId), title, content, deadline, isDone)
 
+def doneTask(is_done, index):
+    cursor.execute( 
+        "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(is_done)
+    )
+    query = cursor.fetchall()
+
+    for value in query:
+        if (value[3] == None): print(f"\t[{index}] {value[0]} - {value[2]}")
+        else: print(f"\t[{index}] [{getCatName(value[3])}] {value[0]} - {value[2]}")
+        index += 1
+
+    return (query, index)
+
 def markTaskAsDone():
-    pass
+    print("\t---- Change Task Status ----\n")
+    print("[UNFINISHED TASKS] (Select task to Mark as DONE)")
+    unfinished = doneTask(0, 0) # 0 for False, 0 as index
+    print("\n[FINISHED TASKS] (Select task to Mark as NOT DONE)")
+    finished = doneTask(1, unfinished[1]) # 1 for False, index returned by first doneTask()
+
+    selected = int(input("\nEnter the index of the chosen task: "))
+    if (selected in range(0, unfinished[1])): 
+        updateSQL(1, unfinished[0][selected][1], 'is_done')
+    elif (selected in range(unfinished[1], finished[1])):
+        selected -= unfinished[1]
+        updateSQL(0, finished[0][selected][1], 'is_done')
+    else: print("Invalid index.")
+
+    mConnect.commit()
 
 def createCategory():
     pass
