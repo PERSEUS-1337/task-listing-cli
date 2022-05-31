@@ -45,8 +45,7 @@ def list(type):
 
     while (True):
         if (type == 0): 
-            print("Write !NULL for NULL")
-            selected = (input("Enter the index of the chosen category: "))
+            selected = (input("Enter the index of the chosen category [Write !NULL for NULL]: "))
             if (selected == "!NULL"): return None
         elif (type == 1): selected = input("Enter the index of the chosen task: ")
 
@@ -72,10 +71,12 @@ def printTask(categoryName, title, content, deadline, isDone):
 def createTask():
     print("---- Create Task ----\n")
     title_input = (input("Enter the task title: "))
-    content_input = input("(Optional) Contents: ")
+    content_input = input("Contents: ")
 
+    print("\nEnter Deadline of Task: ")
     deadline = dateInput()
     
+    print("\nCategory of Task:")
     category = list(0) # category_id of selected category
     if (category != None):
         category = category[1]
@@ -106,6 +107,8 @@ def updateSQL(newValue, task, attrib):
             "UPDATE task SET " +  attrib + "=%s WHERE task_id=%s", (newValue, task)
         )
 
+    mConnect.commit()
+
 def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
@@ -118,33 +121,34 @@ def editTask():
         )
         taskTuple = cursor.fetchone() # tuple containing current values of the selected task
 
-        print("Information of Task to Edit")
+        print("\nInformation of Task to Edit")
         printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # CatName, title, content, deadline, isDone
 
         print("What would you like to edit? WARNING: CHANGE IS PERMANENT")
         print("[1] Title | [2] Content | [3] Category of Task | [4] Deadline | [5] Done!")
 
-        choice = int(input("Choice: "))
+        choice = (input("Choice: "))
+        print()
 
-        if (choice == 1):
+        if ((choice) == "1"):
             newTitle = input("New Title: ")
             cursor.execute(
                 "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
             )
-        elif (choice == 2):
+        elif (choice == "2"):
             newContent = input("New Content [Write !NULL for NULL]: ")
             updateSQL(newContent, task, 'content')
-        elif (choice == 3):
+        elif (choice == "3"):
             category = list(0)
             if (category != None): category = category[1]
             updateSQL(category, task, 'category_id')
-        elif (choice == 4):
+        elif (choice == "4"):
             print("Write !NULL for NULL")
             deadline = dateInput()
             updateSQL(deadline, task, 'deadline')
-        elif (choice == 5):
-            mConnect.commit()
+        elif (choice == "5"):
             flag = False    
+        else: print("Invalid Choice.")
 
 def deleteTask():    
     print("\t---- Delete Tasks ----\n")
