@@ -3,8 +3,17 @@ import sys
 from database import cursor, mConnect, mariadb
 
 def dateInput():
-    month = int(input("Month (MM): "))
-    day = int(input("Day (DD): "))
+    print("Deadline: [Write !NULL on Month if no Deadline]")
+    dayInMonth = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) 
+    while (True):
+        month = (input("Month (MM): "))
+        if (month == "!NULL"): return None
+        if (int(month) in range(1,13)): 
+            month = int(month)
+            break
+    while (True):
+        day = int(input("Day (DD): "))
+        if (day in range(1,dayInMonth[month]+1)): break
     year = int(input("Year (YYYY): "))
     date = "{}-{}-{}".format(year, month, day)
     return date
@@ -67,17 +76,11 @@ def createTask():
     title_input = (input("Enter the task title: "))
     content_input = input("(Optional) Contents: ")
 
-    flag = True
-    while (flag == True):
-        deadline_flag = input("Does your task have a deadline? (Y/N)\n")
-        if (deadline_flag == "Y"):
-
-            flag = False
-        elif (deadline_flag == "N"):
-            deadline = None
-            flag = False
-        
-    category = list(0)[1] # category_id of selected category
+    deadline = dateInput()
+    
+    category = list(0) # category_id of selected category
+    if (category != None):
+        category = category[1]
 
     # To get new task_id: Get the highest task-id in task table then add one.
     cursor.execute(
@@ -95,6 +98,16 @@ def createTask():
 
     mConnect.commit()
 
+def updateSQL(newValue, task, attrib):
+    if ((newValue == "!NULL") or (newValue == None)):
+        cursor.execute(
+            "UPDATE task SET " + attrib + "=NULL WHERE task_id={}".format(task)
+        )
+    else:
+        cursor.execute(
+            "UPDATE task SET " +  attrib + "=%s WHERE task_id=%s", (newValue, task)
+        )
+
 def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
@@ -110,7 +123,7 @@ def editTask():
         print("Information of Task to Edit")
         printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # CatName, title, content, deadline, isDone
 
-        print("What would you like to edit? WARNING: CHANGE IS PERMANENT\n")
+        print("What would you like to edit? WARNING: CHANGE IS PERMANENT")
         print("[1] Title | [2] Content | [3] Category of Task | [4] Deadline | [5] Done!")
 
         choice = int(input("Choice: "))
@@ -121,80 +134,19 @@ def editTask():
                 "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
             )
         elif (choice == 2):
-            print("Write !NULL for NULL")
-            newContent = input("New Content: ")
-            if (newContent == "!NULL"):
-                cursor.execute(
-                    "UPDATE task SET content=NULL WHERE task_id=%s", (task,)
-                )
-            else:
-                cursor.execute(
-                    "UPDATE task SET content=%s WHERE task_id=%s", (newContent, task)
-                )
+            newContent = input("New Content [Write !NULL for NULL]: ")
+            updateSQL(newContent, task, 'content')
         elif (choice == 3):
             category = list(0)
-            if (category == None): 
-                cursor.execute(
-                    "UPDATE task SET category_id=NULL WHERE task_id=%s", (task,)
-                )
-            else:
-                cursor.execute(
-                    "UPDATE task SET category_id=%s WHERE task_id=%s", (category[1], task)
-                )
+            if (category != None): category = category[1]
+            updateSQL(category, task, 'category_id')
         elif (choice == 4):
             print("Write !NULL for NULL")
             deadline = dateInput()
-            cursor.execute(
-                "UPDATE task SET deadline=%s WHERE task_id=%s", (deadline, task)
-            )
+            updateSQL(deadline, task, 'deadline')
         elif (choice == 5):
-            flag = False
-
-
-        # print("If you don't want to change the value, just press ENTER.")
-        # print("If you want to change the value to NULL, write !NULL")
-        # newTitle = input("Title: ") or taskTuple[2]
-        # if (newTitle == "!NULL"): 
-        #     print("Title can't be null. Restoring old title.")
-        #     newTitle = taskTuple[2]
-        # newContent = taskTuple[3]
-        # if (newContent == "!NULL"): newContent = None
-
-        # while (True):
-        #     changeDead = ("Do you want to change the deadline of the task (Y/N/!NULL)? ")
-        #     if (changeDead == "!NULL"):
-        #         newDeadline = None
-        #         break
-        #     elif (changeDead == "Y"): 
-        #         newDeadline = dateInput()
-        #         break
-        #     elif (changeDead == "N"):
-        #         newDeadline = taskTuple[4]
-        #         break
-
-        # while (True):
-        #     changeCat = input("Do you want to change the category of the task (Y/N/!NULL)? ")
-        #     if (changeCat == "!NULL"):
-        #         newCategory = None
-        #         break
-        #     elif (changeCat == "Y"): 
-        #         category = list(0)
-        #         newCategory = category[1]
-        #         break
-        #     elif (changeCat == "N"):
-        #         newCategory = taskTuple[1]
-        #         break
-
-        # printTask(getCatName(taskTuple[1]), taskTuple[2], taskTuple[3], taskTuple[4], taskTuple[5]) # CatName, title, content, deadline, isDone
-        # while (True):
-        #     quit = input("Are you satisfied with the changes (Y/N)? ")
-        #     if (quit == "Y"): 
-        #         flag = False
-        #         break
-        #     if (quit == "N"):
-        #         break
-
-        
+            mConnect.commit()
+            flag = False    
 
 def deleteTask():
     stack = input("Input: ") or "stack"
