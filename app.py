@@ -2,6 +2,13 @@ from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
 
+# Create global variables for:
+# Choice Indexing
+# List Type
+# Order of name, category_id, task_id, etc
+# Index in fetchone/fetchall
+# Index in list return query 
+
 def getCatName(catID):
     cursor.execute(
         "SELECT name FROM category where category_id = {}".format(catID)
@@ -20,7 +27,7 @@ def list(type):
         )
     
     query = cursor.fetchall()
-    index = 0
+    index = 0                   
 
     for value in query:
         print(f"[{index}] {value[0]} - {value[2]}")
@@ -135,16 +142,16 @@ def createCategory():
     category_input = input("Enter the category title: ")
     descripton_input = input("(Optional) Description: ")
         
-    # To get new task_id: Get the highest task-id in task table then add one.
+    # To get new category_id: Get the highest category_id in category table then add one.
     cursor.execute(
         "SELECT MAX(category_id)+1 FROM category"
     )
     id = cursor.fetchone()[0]
 
-    # Values of the new task in tuple
+    # Values of the new category in tuple
     args = (id, category_input, descripton_input)
 
-    # Insert the values of the new task to the task table
+    # Insert the values of the new category to the category table
     cursor.execute(
         "INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args
     )
@@ -153,22 +160,39 @@ def createCategory():
 
 def editCategory():
     print("\t---- Edit category ----\n")
+
     categoryChoice = list(0)
+    choiceInput = int(input("[1] Category name\n[2] Category description\nWhat do you want to edit (0 to exit): "))
 
-    while True:
-        print("[1] Category name\n[2] Category description\n")
-        choiceInput = int(input("What do you want to edit (0 to exit): "))
-        if (choiceInput == 0): 
-            changeNameInput = input(">> Enter new category name: ")
-        elif (choiceInput == 1):
-            changeDescInput = input(">> Enter new category description: ")
+    if (choiceInput == 1): 
+        changeNameInput = input(">> Enter new category name: ")
+        args = (changeNameInput, categoryChoice[1])
 
-    cursor.execute(
-        "UPDATE category SET"
-    )
+        cursor.execute(
+            "UPDATE category SET name = (%s) WHERE category_id = (%s)", args
+        )
+
+        mConnect.commit()
+
+    elif (choiceInput == 2):
+        changeDescInput = input(">> Enter new category description: ")
+        args = (changeDescInput, categoryChoice[1])
+
+        cursor.execute(
+            "UPDATE category SET description = (%s) WHERE category_id = (%s)", args
+        )
+
+        mConnect.commit()   
 
 def deleteCategory():
-    pass
+    print("\t---- Delete category ----\n")
+    categoryChoice = list(0)
+
+    cursor.execute(
+        "DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1]) 
+    )
+    mConnect.commit()
+
 
 def addTaskToCategory():
     pass
