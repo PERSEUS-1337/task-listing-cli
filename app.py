@@ -31,14 +31,21 @@ def getCatName(catID):  # returns the category_name, accepts category_id as para
 
 # ernest
 def list(type): # lists tasks/categories with index, to make it easier for the user to select.
-    if (type == 0) : # type = 0 is for category
-        cursor.execute(
-            "SELECT name, category_id, description FROM category ORDER BY name"
-        )
-    elif (type == 1) : # type = 1 is for task
-        cursor.execute(
-            "SELECT title, task_id, content FROM task ORDER BY title"
-        )
+    try:
+        if (type == 0) : # type = 0 is for category
+            cursor.execute(
+                "SELECT name, category_id, description FROM category ORDER BY name"
+            )
+        elif (type == 1) : # type = 1 is for task
+            cursor.execute(
+                "SELECT title, task_id, content FROM task ORDER BY title"
+            )
+        elif (type == 2) : # type = 2 addCategToTask
+            cursor.execute(
+                "SELECT title, task_id, content, category_id FROM task WHERE category_id IS NULL ORDER BY title DESC"
+            )
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
     
     query = cursor.fetchall()
     index = 0                   
@@ -49,10 +56,11 @@ def list(type): # lists tasks/categories with index, to make it easier for the u
         index += 1
 
     while (True): # prevents out of bound index inputs
+        selected = 0
         if (type == 0): # for category
             selected = (input("Enter the index of the chosen category [Write !NULL for NULL]: "))
             if (selected == "!NULL"): return None # No category
-        elif (type == 1): selected = input("Enter the index of the chosen task: ") # for task
+        elif (type == 1 or type == 2): selected = input("Enter the index of the chosen task: ") # for task
 
         if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
 
@@ -180,10 +188,19 @@ def viewAllTasks():
         else: printTask(getCatName(categoryId), title, content, deadline, isDone)
 
 # ernest
-def doneTask(is_done, index): # similar to list but specialized for markTaskAsDone()
-    cursor.execute( 
-        "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(is_done)
-    )
+def doneTaskInclCat(type, xVal, index): # similar to list but specialized for markTaskAsDone()
+    if (type == 0):
+        cursor.execute( 
+            "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(xVal)
+        )
+    elif (type == 1): # NULL
+        cursor.execute( 
+            "SELECT title, task_id, content, category_id FROM task WHERE category=NULL ORDER BY title"
+        )
+    elif (type == 2): # with Category
+        cursor.execute( 
+            "SELECT title, task_id, content, category_id FROM task WHERE category_id IS NOT NULL ORDER BY category_id DESC, title"
+        )
     query = cursor.fetchall()
 
     # prints:
@@ -200,9 +217,9 @@ def doneTask(is_done, index): # similar to list but specialized for markTaskAsDo
 def markTaskAsDone():
     print("\t---- Change Task Status ----\n")
     print("[UNFINISHED TASKS] (Select task to Mark as DONE)")
-    unfinished = doneTask(0, 0) # 0 for False, 0 as index |
+    unfinished = doneTaskInclCat(0, 0, 0) # 0 for False, 0 as index |
     print("\n[FINISHED TASKS] (Select task to Mark as NOT DONE)")
-    finished = doneTask(1, unfinished[1]) # 1 for True, index returned by first doneTask()
+    finished = doneTaskInclCat(0, 1, unfinished[1]) # 1 for True, index returned by first doneTaskInclCat()
 
     selected = int(input("\nEnter the index of the chosen task: "))
     if (selected in range(0, unfinished[1])): # checks if selected is in unfinished
@@ -286,8 +303,26 @@ def deleteCategory():
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
 
+# resty
 def addTaskToCategory():
-    pass
+    print("\t---- Add Task to Category ----\n")
+    print("(Select task to Categorize)")
+    taskChoice = list(2)
+    
+    print("\n(Select task to Categorize)")
+    categoryChoice = list(0)
+
+    print(taskChoice[0])
+    print(categoryChoice[0])
+
+    args = (categoryChoice[1], taskChoice[1])
+    try:
+        cursor.execute("UPDATE task SET category_id = (%s) WHERE task_id = (%s)", args)
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
+
+    print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
+    mConnect.commit()
 
 def viewTaskByCalendar(): 
     pass
