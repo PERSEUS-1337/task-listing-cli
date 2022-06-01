@@ -2,6 +2,9 @@ from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
 
+####################### UNIFIED FUNCTIONS SECTION #######################
+
+# ernest
 def dateInput():    # asks the user for a Date (Deadline)
     print("Deadline: [Write !NULL on Month if no Deadline]")
     dayInMonth = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31) # Days in every month. February set to 29.
@@ -18,6 +21,7 @@ def dateInput():    # asks the user for a Date (Deadline)
     date = "{}-{}-{}".format(year, month, day)  # Format accepted by SQL
     return date
 
+# ernest
 def getCatName(catID):  # returns the category_name, accepts category_id as parameter
     if (catID == None): return None     # No Category
     cursor.execute(
@@ -25,6 +29,7 @@ def getCatName(catID):  # returns the category_name, accepts category_id as para
     )
     return cursor.fetchone()[0]
 
+# ernest
 def list(type): # lists tasks/categories with index, to make it easier for the user to select.
     if (type == 0) : # type = 0 is for category
         cursor.execute(
@@ -50,8 +55,8 @@ def list(type): # lists tasks/categories with index, to make it easier for the u
         elif (type == 1): selected = input("Enter the index of the chosen task: ") # for task
 
         if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
-    
 
+# ernest 
 def printTask(categoryName, title, content, deadline, isDone):
     print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
 
@@ -68,6 +73,7 @@ def printTask(categoryName, title, content, deadline, isDone):
 
     print()
 
+# ernest
 def createTask(): # create/add new task
     print("---- Create Task ----\n")
     title_input = (input("Enter the task title: "))
@@ -97,6 +103,7 @@ def createTask(): # create/add new task
 
     mConnect.commit()
 
+# ernest
 def updateSQL(newValue, task, attrib): # update the task table, one attribute at a time | Parameters: new value, task_id, attribute to be changed
     if ((newValue == "!NULL") or (newValue == None)): # dedicated SQL for NULL values since None doesn't work.
         cursor.execute(
@@ -109,6 +116,7 @@ def updateSQL(newValue, task, attrib): # update the task table, one attribute at
 
     mConnect.commit()
 
+# ernest
 def editTask():
     print("\t---- Edit Tasks ----\n")
     task = list(1)[1] # task_id of selected task
@@ -150,6 +158,7 @@ def editTask():
             flag = False    
         else: print("Invalid Choice.")
 
+# ernest
 def deleteTask():    
     print("\t---- Delete Tasks ----\n")
     task = list(1)[1] # task_id of selected task
@@ -170,6 +179,7 @@ def viewAllTasks():
         if (categoryId == None): (printTask(None, title, content, deadline, isDone))
         else: printTask(getCatName(categoryId), title, content, deadline, isDone)
 
+# ernest
 def doneTask(is_done, index): # similar to list but specialized for markTaskAsDone()
     cursor.execute( 
         "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(is_done)
@@ -186,6 +196,7 @@ def doneTask(is_done, index): # similar to list but specialized for markTaskAsDo
 
     return (query, index) # returns the 2d tasks tuple, and the index
 
+# ernset
 def markTaskAsDone():
     print("\t---- Change Task Status ----\n")
     print("[UNFINISHED TASKS] (Select task to Mark as DONE)")
@@ -203,81 +214,77 @@ def markTaskAsDone():
 
     mConnect.commit()
 
+# resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = list(0)
+    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
 
-    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])
     try:
-        cursor.execute(
-            "SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],)
-        )
+        cursor.execute("SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],))        # get id using 1, added a comma to the end for python to treat it as a tuple
         tasks = cursor.fetchall()
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
+    
+    if not tasks: print("\tThere are no tasks as of the moment")
+    else:
+        print("\tTasks:")
+        index = 1
+        for title in tasks:
+            print(f"\t\t[{index}]" + title[1])      # get task title using 1
+            index += 1
 
-    index = 1
-    print("\tTasks:")
-    for title in tasks:
-        print(f"\t\t[{index}]" + title[1])
-        index += 1
-
+# resty
 def createCategory():
     print("---- Create Category ----\n")
     category_input = input("Enter the category title: ")
     descripton_input = input("(Optional) Description: ")
-        
-    # To get new category_id: Get the highest category_id in category table then add one.
-    cursor.execute(
-        "SELECT MAX(category_id)+1 FROM category"
-    )
-    id = cursor.fetchone()[0]
+    
+    try:
+        cursor.execute("SELECT MAX(category_id)+1 FROM category")       # To get new category_id: Get the highest category_id in category table then add one.
+        id = cursor.fetchone()[0]       # Get the first value (which is the max value returned) using 0
 
-    # Values of the new category in tuple
-    args = (id, category_input, descripton_input)
+        args = (id, category_input, descripton_input)       # Values of the new category in tuple
+        cursor.execute("INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args)     # Insert the values of the new category to the category table
+        mConnect.commit()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}") 
 
-    # Insert the values of the new category to the category table
-    cursor.execute(
-        "INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args
-    )
-
-    mConnect.commit()
-
+# resty
 def editCategory():
     print("\t---- Edit category ----\n")
+    args = ()
+    attrib = ''
 
-    categoryChoice = list(0)
+    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
     choiceInput = int(input("[1] Category name\n[2] Category description\nWhat do you want to edit (0 to exit): "))
 
     if (choiceInput == 1): 
         changeNameInput = input(">> Enter new category name: ")
-        args = (changeNameInput, categoryChoice[1])
-
-        cursor.execute(
-            "UPDATE category SET name = (%s) WHERE category_id = (%s)", args
-        )
-
-        mConnect.commit()
+        attrib = 'name'
+        args = (changeNameInput, categoryChoice[1])         # select 1 for id
 
     elif (choiceInput == 2):
         changeDescInput = input(">> Enter new category description: ")
-        args = (changeDescInput, categoryChoice[1])
+        attrib = 'category'
+        args = (changeDescInput, categoryChoice[1])         # select 1 for id
 
-        cursor.execute(
-            "UPDATE category SET description = (%s) WHERE category_id = (%s)", args
-        )
-
-        mConnect.commit()   
-
+    try:
+        cursor.execute("UPDATE category SET " + attrib + " = (%s) WHERE category_id = (%s)", args)
+        mConnect.commit()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}") 
+         
+# resty
 def deleteCategory():
     print("\t---- Delete category ----\n")
-    categoryChoice = list(0)
+    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
 
-    cursor.execute(
-        "DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1]) 
-    )
-    mConnect.commit()
-
+    try:
+        cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
+        mConnect.commit()
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
 
 def addTaskToCategory():
     pass
