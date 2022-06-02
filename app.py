@@ -1,6 +1,7 @@
 from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
+from collections import defaultdict
 
 ####################### UNIFIED FUNCTIONS SECTION #######################
 
@@ -30,7 +31,7 @@ def getCatName(catID):  # returns the category_name, accepts category_id as para
     return cursor.fetchone()[0]
 
 # ernest
-def list(type): # lists tasks/categories with index, to make it easier for the user to select.
+def chooseFromList(type): # lists tasks/categories with index, to make it easier for the user to select.
     try:
         if (type == 0) : # type = 0 is for category
             cursor.execute(
@@ -64,20 +65,22 @@ def list(type): # lists tasks/categories with index, to make it easier for the u
 
         if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
 
-# ernest 
-def printTask(categoryName, title, content, deadline, isDone):
-    print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
+# ernest
+def printTask(categoryName, title, content, deadline, isDone, tabCount=0):
+    indent = "\t" * tabCount
+
+    print(f"{indent}[{categoryName or 'UNCATEGORIZED'}]")
 
     if isDone:
-        print("\t(FINISHED) " + title)
+        print(f"{indent}(FINISHED) " + title)
     else:
-        print("\t" + title)
+        print(f"{indent}" + title)
 
     if content:
-        print("\t-", content)
+        print(f"{indent}-", content)
 
     if deadline:
-        print("\tDeadline:", deadline)
+        print(f"{indent}Deadline:", deadline)
 
     print()
 
@@ -91,7 +94,7 @@ def createTask(): # create/add new task
     deadline = dateInput()
     
     print("\nCategory of Task:")
-    category = list(0) # category tuple if a category is selected, None if no category is selected
+    category = chooseFromList(0) # category tuple if a category is selected, None if no category is selected
     if (category != None): # checks if category is a category tuple
         category = category[1] # category_id
 
@@ -127,7 +130,7 @@ def updateSQL(newValue, task, attrib): # update the task table, one attribute at
 # ernest
 def editTask():
     print("\t---- Edit Tasks ----\n")
-    task = list(1)[1] # task_id of selected task
+    task = chooseFromList(1)[1]  # task_id of selected task
 
     flag = True
     while(flag):
@@ -155,7 +158,7 @@ def editTask():
             newContent = input("New Content [Write !NULL for NULL]: ")
             updateSQL(newContent, task, 'content')
         elif (choice == "3"): # Category
-            category = list(0)
+            category = chooseFromList(0)
             if (category != None): category = category[1]
             updateSQL(category, task, 'category_id')
         elif (choice == "4"): # Deadline
@@ -169,7 +172,7 @@ def editTask():
 # ernest
 def deleteTask():    
     print("\t---- Delete Tasks ----\n")
-    task = list(1)[1] # task_id of selected task
+    task = chooseFromList(1)[1]  # task_id of selected task
     cursor.execute(
         "DELETE FROM task WHERE task_id={}".format(task)
     )
@@ -184,8 +187,8 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        if (categoryId == None): (printTask(None, title, content, deadline, isDone))
-        else: printTask(getCatName(categoryId), title, content, deadline, isDone)
+        printTask(getCatName(categoryId), title, content, deadline, isDone, tabCount=1)
+
 
 # ernest
 def doneTaskInclCat(type, xVal, index): # similar to list but specialized for markTaskAsDone()
@@ -234,7 +237,7 @@ def markTaskAsDone():
 # resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
     print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
 
     try:
@@ -273,7 +276,7 @@ def editCategory():
     args = ()
     attrib = ''
 
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)
     choiceInput = int(input("[1] Category name\n[2] Category description\nWhat do you want to edit (0 to exit): "))
 
     if (choiceInput == 1): 
@@ -295,7 +298,7 @@ def editCategory():
 # resty
 def deleteCategory():
     print("\t---- Delete category ----\n")
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
 
     try:
         cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
@@ -307,10 +310,10 @@ def deleteCategory():
 def addTaskToCategory():
     print("\t---- Add Task to Category ----\n")
     print("(Select task to Categorize)")
-    taskChoice = list(2)
+    taskChoice = chooseFromList(2)
     
     print("\n(Select task to Categorize)")
-    categoryChoice = list(0)
+    categoryChoice = chooseFromList(0)
 
     print(taskChoice[0])
     print(categoryChoice[0])
@@ -324,12 +327,90 @@ def addTaskToCategory():
     print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
     mConnect.commit()
 
-def viewTaskByCalendar(): 
-    pass
+
+def getGroupedTasksBy(chosenTimeFrameType):
+    if chosenTimeFrameType not in ["day", "month"]:
+        return None
+
+    cursor.execute(
+        "SELECT category_id, title, content, deadline, is_done, MONTHNAME(deadline), DAY(deadline), DAYNAME(deadline), YEAR(deadline) FROM task ORDER BY is_done, title"
+    )
+    allTasks = cursor.fetchall()
+
+    groupedTasks = defaultdict(list)
+    for (
+        categoryId,
+        title,
+        content,
+        deadline,
+        isDone,
+        deadlineMonthName,
+        deadlineDay,
+        deadlineDayName,
+        deadlineYear,
+    ) in allTasks:
+        categoryName = getCatName(categoryId)
+
+        if deadline and chosenTimeFrameType == "day":
+            timeFrame = (
+                f"{deadlineMonthName} {deadlineDay}, {deadlineYear} ({deadlineDayName})"
+            )
+
+        elif deadline and chosenTimeFrameType == "month":
+            timeFrame = f"{deadlineMonthName} {deadlineYear}"
+
+        else:
+            timeFrame = None
+
+        groupedTasks[timeFrame].append(
+            {
+                "categoryName": categoryName,
+                "title": title,
+                "content": content,
+                "deadline": deadline,
+                "isDone": isDone,
+            }
+        )
+
+    return groupedTasks
+
+
+def viewTaskCalendar():
+    print("\tView task per:")
+    print("\t• Day (d)")
+    print("\t• Month (m)")
+
+    timeFrameCode = askInput("Enter time frame code", tabCount=1)
+
+    match timeFrameCode:
+        case "d":
+            groupedTasks = getGroupedTasksBy("day")
+        case "m":
+            groupedTasks = getGroupedTasksBy("month")
+        case _:
+            print("\tInput not recognized\n")
+            return
+
+    print("\t---- All tasks ----\n")
+
+    for timeFrame, tasks in groupedTasks.items():
+        print(f"\t{timeFrame or '*NO DEADLINE*'}\n")
+
+        for taskInfo in tasks:
+            printTask(
+                taskInfo["categoryName"],
+                taskInfo["title"],
+                taskInfo["content"],
+                taskInfo["deadline"],
+                taskInfo["isDone"],
+                tabCount=2,
+            )
+
 
 def quitApp():
     print("Quitting application\n")
     sys.exit(1)
+
 
 actions = {
     "ct": {"name": "Create task", "function": createTask},
@@ -342,7 +423,7 @@ actions = {
     "dc": {"name": "Delete category", "function": deleteCategory},
     "vc": {"name": "View category", "function": viewCategory},
     "attc": {"name": "Add a task to a category", "function": addTaskToCategory},
-    "vtc": {"name": "View task by calendar", "function": viewTaskByCalendar},
+    "vtc": {"name": "View task calendar", "function": viewTaskCalendar},
     "q": {"name": "Quit application", "function": quitApp},
 }
 
@@ -353,8 +434,10 @@ def printActionsList():
         print("•", actions[actionCode]["name"], f"({actionCode})")
 
 
-def askInput(prompt):
-    inputString = input(f"\n{prompt}: ")
+def askInput(prompt, tabCount=0):
+    indent = "\t" * tabCount
+
+    inputString = input(f"\n{indent}{prompt}: ")
     print()
 
     return inputString
