@@ -5,11 +5,6 @@ import sys
 
 load_dotenv()
 
-# userInput = input("Enter user: ")
-# userPW = input("Enter password: ")
-# userHost = socket.gethostname()
-# userPort = 3306
-
 try:
     connection = mariadb.connect(
         user=os.getenv("DB_USER"),
@@ -18,13 +13,6 @@ try:
         port=int(os.getenv("DB_PORT")),
         database="task_listing",
     )
-    # connection = mariadb.connect(
-    #     user=userInput,
-    #     password=userPW,
-    #     host=userHost,
-    #     port=userPort,
-    #     database="task_listing",
-    # )
 
     cursor = connection.cursor()
 
