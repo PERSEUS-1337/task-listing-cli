@@ -30,7 +30,7 @@ def getCatName(catID):  # returns the category_name, accepts category_id as para
     return cursor.fetchone()[0]
 
 # ernest
-def list(type): # lists tasks/categories with index, to make it easier for the user to select.
+def chooseFromList(type): # lists tasks/categories with index, to make it easier for the user to select.
     try:
         if (type == 0) : # type = 0 is for category
             cursor.execute(
@@ -91,7 +91,7 @@ def createTask(): # create/add new task
     deadline = dateInput()
     
     print("\nCategory of Task:")
-    category = list(0) # category tuple if a category is selected, None if no category is selected
+    category = chooseFromList(0) # category tuple if a category is selected, None if no category is selected
     if (category != None): # checks if category is a category tuple
         category = category[1] # category_id
 
@@ -127,7 +127,7 @@ def updateSQL(newValue, task, attrib): # update the task table, one attribute at
 # ernest
 def editTask():
     print("\t---- Edit Tasks ----\n")
-    task = list(1)[1] # task_id of selected task
+    task = chooseFromList(1)[1]  # task_id of selected task
 
     flag = True
     while(flag):
@@ -155,7 +155,7 @@ def editTask():
             newContent = input("New Content [Write !NULL for NULL]: ")
             updateSQL(newContent, task, 'content')
         elif (choice == "3"): # Category
-            category = list(0)
+            category = chooseFromList(0)
             if (category != None): category = category[1]
             updateSQL(category, task, 'category_id')
         elif (choice == "4"): # Deadline
@@ -169,7 +169,7 @@ def editTask():
 # ernest
 def deleteTask():    
     print("\t---- Delete Tasks ----\n")
-    task = list(1)[1] # task_id of selected task
+    task = chooseFromList(1)[1]  # task_id of selected task
     cursor.execute(
         "DELETE FROM task WHERE task_id={}".format(task)
     )
@@ -234,7 +234,7 @@ def markTaskAsDone():
 # resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
     print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
 
     try:
@@ -273,7 +273,7 @@ def editCategory():
     args = ()
     attrib = ''
 
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)
     choiceInput = int(input("[1] Category name\n[2] Category description\nWhat do you want to edit (0 to exit): "))
 
     if (choiceInput == 1): 
@@ -295,7 +295,7 @@ def editCategory():
 # resty
 def deleteCategory():
     print("\t---- Delete category ----\n")
-    categoryChoice = list(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
 
     try:
         cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
@@ -307,10 +307,10 @@ def deleteCategory():
 def addTaskToCategory():
     print("\t---- Add Task to Category ----\n")
     print("(Select task to Categorize)")
-    taskChoice = list(2)
+    taskChoice = chooseFromList(2)
     
     print("\n(Select task to Categorize)")
-    categoryChoice = list(0)
+    categoryChoice = chooseFromList(0)
 
     print(taskChoice[0])
     print(categoryChoice[0])
