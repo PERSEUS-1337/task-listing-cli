@@ -1,6 +1,7 @@
 from multiprocessing import connection
 import sys
 from database import cursor, mConnect, mariadb
+from collections import defaultdict
 
 ####################### UNIFIED FUNCTIONS SECTION #######################
 
@@ -326,12 +327,90 @@ def addTaskToCategory():
     print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
     mConnect.commit()
 
-def viewTaskByCalendar(): 
-    pass
+
+def getGroupedTasksBy(chosenTimeFrameType):
+    if chosenTimeFrameType not in ["day", "month"]:
+        return None
+
+    cursor.execute(
+        "SELECT category_id, title, content, deadline, is_done, MONTHNAME(deadline), DAY(deadline), DAYNAME(deadline), YEAR(deadline) FROM task ORDER BY is_done, title"
+    )
+    allTasks = cursor.fetchall()
+
+    groupedTasks = defaultdict(list)
+    for (
+        categoryId,
+        title,
+        content,
+        deadline,
+        isDone,
+        deadlineMonthName,
+        deadlineDay,
+        deadlineDayName,
+        deadlineYear,
+    ) in allTasks:
+        categoryName = getCatName(categoryId)
+
+        if deadline and chosenTimeFrameType == "day":
+            timeFrame = (
+                f"{deadlineMonthName} {deadlineDay}, {deadlineYear} ({deadlineDayName})"
+            )
+
+        elif deadline and chosenTimeFrameType == "month":
+            timeFrame = f"{deadlineMonthName} {deadlineYear}"
+
+        else:
+            timeFrame = None
+
+        groupedTasks[timeFrame].append(
+            {
+                "categoryName": categoryName,
+                "title": title,
+                "content": content,
+                "deadline": deadline,
+                "isDone": isDone,
+            }
+        )
+
+    return groupedTasks
+
+
+def viewTaskCalendar():
+    print("\tView task per:")
+    print("\t• Day (d)")
+    print("\t• Month (m)")
+
+    timeFrameCode = askInput("Enter time frame code", tabCount=1)
+
+    match timeFrameCode:
+        case "d":
+            groupedTasks = getGroupedTasksBy("day")
+        case "m":
+            groupedTasks = getGroupedTasksBy("month")
+        case _:
+            print("\tInput not recognized\n")
+            return
+
+    print("\t---- All tasks ----\n")
+
+    for timeFrame, tasks in groupedTasks.items():
+        print(f"\t{timeFrame or '*NO DEADLINE*'}\n")
+
+        for taskInfo in tasks:
+            printTask(
+                taskInfo["categoryName"],
+                taskInfo["title"],
+                taskInfo["content"],
+                taskInfo["deadline"],
+                taskInfo["isDone"],
+                tabCount=2,
+            )
+
 
 def quitApp():
     print("Quitting application\n")
     sys.exit(1)
+
 
 actions = {
     "ct": {"name": "Create task", "function": createTask},
@@ -344,7 +423,7 @@ actions = {
     "dc": {"name": "Delete category", "function": deleteCategory},
     "vc": {"name": "View category", "function": viewCategory},
     "attc": {"name": "Add a task to a category", "function": addTaskToCategory},
-    "vtc": {"name": "View task by calendar", "function": viewTaskByCalendar},
+    "vtc": {"name": "View task calendar", "function": viewTaskCalendar},
     "q": {"name": "Quit application", "function": quitApp},
 }
 
