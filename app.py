@@ -413,17 +413,17 @@ def quitApp():
 
 
 actions = {
+    "vat": {"name": "View all tasks", "function": viewAllTasks},
+    "vtc": {"name": "View task calendar", "function": viewTaskCalendar},
     "ct": {"name": "Create task", "function": createTask},
     "et": {"name": "Edit task", "function": editTask},
     "dt": {"name": "Delete task", "function": deleteTask},
-    "vat": {"name": "View all tasks", "function": viewAllTasks},
     "mt": {"name": "Mark task as done", "function": markTaskAsDone},
     "cc": {"name": "Create category", "function": createCategory},
     "ec": {"name": "Edit category", "function": editCategory},
     "dc": {"name": "Delete category", "function": deleteCategory},
     "vc": {"name": "View category", "function": viewCategory},
     "attc": {"name": "Add a task to a category", "function": addTaskToCategory},
-    "vtc": {"name": "View task calendar", "function": viewTaskCalendar},
     "q": {"name": "Quit application", "function": quitApp},
 }
 
