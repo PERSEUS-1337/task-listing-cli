@@ -1,6 +1,6 @@
-from multiprocessing import connection
 import sys
-from database import cursor, mConnect, mariadb
+import mariadb
+from database import cursor, connection
 from collections import defaultdict
 
 ####################### UNIFIED FUNCTIONS SECTION #######################
@@ -112,7 +112,7 @@ def createTask(): # create/add new task
         "INSERT INTO task(task_id, category_id, title, content, deadline) VALUES(%s, %s, %s, %s, %s)", args
     )
 
-    mConnect.commit()
+    connection.commit()
 
 # ernest
 def updateSQL(newValue, task, attrib): # update the task table, one attribute at a time | Parameters: new value, task_id, attribute to be changed
@@ -125,7 +125,7 @@ def updateSQL(newValue, task, attrib): # update the task table, one attribute at
             "UPDATE task SET " +  attrib + "=%s WHERE task_id=%s", (newValue, task)
         )
 
-    mConnect.commit()
+    connection.commit()
 
 # ernest
 def editTask():
@@ -176,7 +176,7 @@ def deleteTask():
     cursor.execute(
         "DELETE FROM task WHERE task_id=?", (task,)
     )
-    mConnect.commit()
+    connection.commit()
 
 def viewAllTasks():
     print("\t---- All tasks ----\n")
@@ -232,7 +232,7 @@ def markTaskAsDone():
         updateSQL(0, finished[0][selected][1], 'is_done') # Parameters: False, category_id of selected task, attribute to be changed
     else: print("Invalid index.")
 
-    mConnect.commit()
+    connection.commit()
 
 # resty
 def viewCategory():
@@ -266,7 +266,7 @@ def createCategory():
 
         args = (id, category_input, descripton_input)       # Values of the new category in tuple
         cursor.execute("INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args)     # Insert the values of the new category to the category table
-        mConnect.commit()
+        connection.commit()
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}") 
 
@@ -291,7 +291,7 @@ def editCategory():
 
     try:
         cursor.execute("UPDATE category SET " + attrib + " = (%s) WHERE category_id = (%s)", args)
-        mConnect.commit()
+        connection.commit()
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}") 
          
@@ -302,7 +302,7 @@ def deleteCategory():
 
     try:
         cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
-        mConnect.commit()
+        connection.commit()
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
 
@@ -325,7 +325,7 @@ def addTaskToCategory():
         print(f"Error connecting to MariaDB Platform: {e}")
 
     print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
-    mConnect.commit()
+    connection.commit()
 
 
 def getGroupedTasksBy(chosenTimeFrameType):
