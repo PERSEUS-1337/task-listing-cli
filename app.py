@@ -64,20 +64,22 @@ def chooseFromList(type): # lists tasks/categories with index, to make it easier
 
         if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
 
-# ernest 
-def printTask(categoryName, title, content, deadline, isDone):
-    print(f"\t[{categoryName}]") if categoryName else print("\t[UNCATEGORIZED]")
+# ernest
+def printTask(categoryName, title, content, deadline, isDone, tabCount=0):
+    indent = "\t" * tabCount
+
+    print(f"{indent}[{categoryName or 'UNCATEGORIZED'}]")
 
     if isDone:
-        print("\t(FINISHED) " + title)
+        print(f"{indent}(FINISHED) " + title)
     else:
-        print("\t" + title)
+        print(f"{indent}" + title)
 
     if content:
-        print("\t-", content)
+        print(f"{indent}-", content)
 
     if deadline:
-        print("\tDeadline:", deadline)
+        print(f"{indent}Deadline:", deadline)
 
     print()
 
@@ -184,8 +186,8 @@ def viewAllTasks():
     tasks = cursor.fetchall()
 
     for categoryId, title, content, deadline, isDone in tasks:
-        if (categoryId == None): (printTask(None, title, content, deadline, isDone))
-        else: printTask(getCatName(categoryId), title, content, deadline, isDone)
+        printTask(getCatName(categoryId), title, content, deadline, isDone, tabCount=1)
+
 
 # ernest
 def doneTaskInclCat(type, xVal, index): # similar to list but specialized for markTaskAsDone()
@@ -353,8 +355,10 @@ def printActionsList():
         print("•", actions[actionCode]["name"], f"({actionCode})")
 
 
-def askInput(prompt):
-    inputString = input(f"\n{prompt}: ")
+def askInput(prompt, tabCount=0):
+    indent = "\t" * tabCount
+
+    inputString = input(f"\n{indent}{prompt}: ")
     print()
 
     return inputString
