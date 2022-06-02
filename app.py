@@ -26,7 +26,7 @@ def dateInput():    # asks the user for a Date (Deadline)
 def getCatName(catID):  # returns the category_name, accepts category_id as parameter
     if (catID == None): return None     # No Category
     cursor.execute(
-        "SELECT name FROM category where category_id = {}".format(catID)
+        "SELECT name FROM category where category_id = ?", (catID,)
     )
     return cursor.fetchone()[0]
 
@@ -118,7 +118,7 @@ def createTask(): # create/add new task
 def updateSQL(newValue, task, attrib): # update the task table, one attribute at a time | Parameters: new value, task_id, attribute to be changed
     if ((newValue == "!NULL") or (newValue == None)): # dedicated SQL for NULL values since None doesn't work.
         cursor.execute(
-            "UPDATE task SET " + attrib + "=NULL WHERE task_id={}".format(task)
+            "UPDATE task SET " + attrib + "=NULL WHERE task_id=?", (task,)
         )
     else:
         cursor.execute(
@@ -135,7 +135,7 @@ def editTask():
     flag = True
     while(flag):
         cursor.execute(
-            "SELECT * FROM task WHERE task_id = {}".format(task)
+            "SELECT * FROM task WHERE task_id = ?", (task,) 
         )
         taskTuple = cursor.fetchone() # tuple containing current values of the selected task
 
@@ -174,7 +174,7 @@ def deleteTask():
     print("\t---- Delete Tasks ----\n")
     task = chooseFromList(1)[1]  # task_id of selected task
     cursor.execute(
-        "DELETE FROM task WHERE task_id={}".format(task)
+        "DELETE FROM task WHERE task_id=?", (task,)
     )
     mConnect.commit()
 
@@ -194,7 +194,7 @@ def viewAllTasks():
 def doneTaskInclCat(type, xVal, index): # similar to list but specialized for markTaskAsDone()
     if (type == 0):
         cursor.execute( 
-            "SELECT title, task_id, content, category_id FROM task WHERE is_done={} ORDER BY category_id DESC, title".format(xVal)
+            "SELECT title, task_id, content, category_id FROM task WHERE is_done=? ORDER BY category_id DESC, title", (xVal,)
         )
     elif (type == 1): # NULL
         cursor.execute( 
