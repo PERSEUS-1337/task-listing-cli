@@ -87,7 +87,15 @@ def printTask(categoryName, title, content, deadline, isDone, tabCount=0):
 # ernest
 def createTask(): # create/add new task
     print("---- Create Task ----\n")
+
+    # To get new task_id: Get the highest task-id in task table then add one.
+    cursor.execute(
+        "SELECT MAX(task_id)+1 FROM task"
+    )
+    id =  cursor.fetchone()[0]
+
     title_input = (input("Enter the task title: "))
+    if (title_input == ""): title_input = "Task {}".format(id)
     content_input = input("Contents: ")
 
     print("\nEnter Deadline of Task: ")
@@ -97,12 +105,6 @@ def createTask(): # create/add new task
     category = chooseFromList(0) # category tuple if a category is selected, None if no category is selected
     if (category != None): # checks if category is a category tuple
         category = category[1] # category_id
-
-    # To get new task_id: Get the highest task-id in task table then add one.
-    cursor.execute(
-        "SELECT MAX(task_id)+1 FROM task"
-    )
-    id =  cursor.fetchone()[0]
 
     # Values of the new task in tuple
     args = (id, category, title_input, content_input, deadline)
@@ -151,9 +153,10 @@ def editTask():
         if ((choice) == "1"): # Title
             # title doesn't use updateSQL since it can't be NULL.
             newTitle = input("New Title: ")
-            cursor.execute(
-                "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
-            )
+            if (newTitle == ""): print("Title can't be blank.")
+            else:cursor.execute(
+                    "UPDATE task SET title=%s WHERE task_id=%s", (newTitle, task)
+                )
         elif (choice == "2"): # Content
             newContent = input("New Content [Write !NULL for NULL]: ")
             updateSQL(newContent, task, 'content')
