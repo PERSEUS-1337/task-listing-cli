@@ -71,7 +71,6 @@ def chooseFromList(type): # lists tasks/categories with index, to make it easier
         print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
 
-
     while (True): # prevents out of bound index inputs
         selected = 0
         if (type == 0): # for category
@@ -353,22 +352,26 @@ def markTaskAsDone():
 # resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
-    print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
+    categoryChoice = chooseFromList(0)      # Gets category details (name, id, desc) and stores it in an array
 
-    try:
-        cursor.execute("SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],))        # get id using 1, added a comma to the end for python to treat it as a tuple
-        tasks = cursor.fetchall()
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-    
-    if not tasks: print("\t\tThere are no tasks as of the moment")
+    if (categoryChoice == None):
+        return
     else:
-        print("\tTasks:")
-        index = 1
-        for category_id, title in tasks:
-            print(f"\t\t[{index}]" + title)
-            index += 1
+        print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
+
+        try:
+            cursor.execute("SELECT category_id, title FROM task WHERE category_id = (%s)", (categoryChoice[1],))        # get id using 1, added a comma to the end for python to treat it as a tuple
+            tasks = cursor.fetchall()
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+        
+        if not tasks: print("\t\tThere are no tasks as of the moment")
+        else:
+            print("\tTasks:")
+            index = 1
+            for category_id, title in tasks:
+                print(f"\t\t[{index}]" + title)
+                index += 1
 
 
 # resty
@@ -427,7 +430,9 @@ def deleteCategory():
         return
     else:
         try:
+            cursor.execute("UPDATE task SET category_id = NULL WHERE category_id = (%s)", (categoryChoice[1],))
             cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
+            
         except mariadb.Error as e:
             print(f"Error connecting to MariaDB Platform: {e}")
 
@@ -442,19 +447,21 @@ def addTaskToCategory():
     
     print("\n(Select task to Categorize)")
     categoryChoice = chooseFromList(0)
+    if(categoryChoice == None):
+        return
+    else:
+        print(taskChoice[0])
+        print(categoryChoice[0])
 
-    print(taskChoice[0])
-    print(categoryChoice[0])
+        args = (categoryChoice[1], taskChoice[1])
+        try:
+            cursor.execute("UPDATE task SET category_id = (%s) WHERE task_id = (%s)", args)
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
 
-    args = (categoryChoice[1], taskChoice[1])
-    try:
-        cursor.execute("UPDATE task SET category_id = (%s) WHERE task_id = (%s)", args)
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
+        print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
 
-    print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
-
-    connection.commit()
+        connection.commit()
 
 
 # garth
