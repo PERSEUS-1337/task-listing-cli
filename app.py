@@ -385,14 +385,13 @@ def viewTaskCalendar():
 
     timeFrameCode = askInput("Enter time frame code", tabCount=1)
 
-    match timeFrameCode:
-        case "d":
-            groupedTasks = getGroupedTasksBy("day")
-        case "m":
-            groupedTasks = getGroupedTasksBy("month")
-        case _:
-            print("\tInput not recognized\n")
-            return
+    if timeFrameCode == "d":
+        groupedTasks = getGroupedTasksBy("day")
+    elif timeFrameCode == "m":
+        groupedTasks = getGroupedTasksBy("month")
+    else:
+        print("\tInput not recognized\n")
+        return
 
     print("\t---- All tasks ----\n")
 
