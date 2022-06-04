@@ -147,7 +147,7 @@ def getGroupedTasksBy(chosenTimeFrameType):
         return None
 
     cursor.execute(
-        "SELECT category_id, title, content, deadline, is_done, MONTHNAME(deadline), DAY(deadline), DAYNAME(deadline), YEAR(deadline) FROM task ORDER BY is_done, title"
+        "SELECT category_id, title, content, deadline, is_done, MONTHNAME(deadline), DAY(deadline), DAYNAME(deadline), YEAR(deadline) FROM task ORDER BY deadline, is_done, title"
     )
     allTasks = cursor.fetchall()
 
