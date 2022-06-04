@@ -12,15 +12,26 @@ def dateInput():    # asks the user for a Date (Deadline)
     while (True):   # Prevent invalid input for Month
         month = (input("Month (MM): "))
         if (month == "!NULL"): return None  # No Deadline
-        if (int(month) in range(1,13)):     # Check if Month is Valid
-            month = int(month)
-            break
+        try:
+            if (int(month) in range(1,13)):     # Check if Month is Valid
+                month = int(month)
+                break
+        except:
+            continue
     while (True):   # prevent invalid input for Day
-        day = int(input("Day (DD): "))      
-        if (day in range(1,dayInMonth[month]+1)): break # Using the dayInMonth tuple, would check if day valid in accordance with selected Month
-    year = int(input("Year (YYYY): "))
-    date = "{}-{}-{}".format(year, month, day)  # Format accepted by SQL
-    return date
+        try:
+            day = int(input("Day (DD): "))      
+            if (day in range(1,dayInMonth[month]+1)): break # Using the dayInMonth tuple, would check if day valid in accordance with selected Month
+        except:
+            continue
+    while (True):
+        try: 
+            year = int(input("Year (YYYY): "))
+            date = "{}-{}-{}".format(year, month, day)  # Format accepted by SQL
+            return date
+        except:
+            continue
+        
 
 
 # ernest
@@ -70,6 +81,10 @@ def chooseFromList(type): # lists tasks/categories with index, to make it easier
     for value in query:
         print(f"[{index}] {value[0]} - {value[2]}")
         index += 1
+
+    if (index == 0):
+        print("Empty...")
+        return None
 
     while (True): # prevents out of bound index inputs
         selected = 0
@@ -220,10 +235,12 @@ def createTask(): # create/add new task
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
     id =  cursor.fetchone()[0]
+    if (id == None): id = 0 # No task yet hence it returns None
 
     title_input = (input("Enter the task title: "))
     if (title_input == ""): title_input = "Task {}".format(id)
-    content_input = input("Contents: ")
+    content_input = input("Contents [Leave blank for NULL]: ")
+    if (content_input == ""): content_input = None
 
     print("\nEnter Deadline of Task: ")
     deadline = dateInput()
@@ -250,7 +267,10 @@ def createTask(): # create/add new task
 # ernest
 def editTask():
     print("\t---- Edit Tasks ----\n")
-    task = chooseFromList(1)[1]  # task_id of selected task
+    task = chooseFromList(1)  # task tuple of selected task
+    if (task == None): return # end if no task yet
+    
+    task = task[1]            # get task_id
 
     flag = True
     while(flag):
@@ -303,7 +323,11 @@ def editTask():
 # ernest
 def deleteTask():    
     print("\t---- Delete Tasks ----\n")
-    task = chooseFromList(1)[1]  # task_id of selected task
+    task = chooseFromList(1)  # task tuple of selected task
+    if (task == None): return # no task yet
+
+    task = task[1]            # task_id
+
     try:
         cursor.execute(
             "DELETE FROM task WHERE task_id=?", (task,)
@@ -337,6 +361,8 @@ def markTaskAsDone():
     unfinished = doneTask(0, 0, 0) # 0 for False, 0 as index |
     print("\n[FINISHED TASKS] (Select task to Mark as NOT DONE)")
     finished = doneTask(0, 1, unfinished[1]) # 1 for True, index returned by first doneTask()
+
+    if (finished[1] == 0): return
 
     selected = int(input("\nEnter the index of the chosen task: "))
     if (selected in range(0, unfinished[1])): # checks if selected is in unfinished
