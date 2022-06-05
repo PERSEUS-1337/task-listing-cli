@@ -340,7 +340,6 @@ def deleteTask():
 
 # garth
 def viewAllTasks():
-    print("\t---- All tasks ----\n")
     try:
         cursor.execute(
             "SELECT category_id, title, content, deadline, is_done FROM task ORDER BY is_done, title"
@@ -349,6 +348,12 @@ def viewAllTasks():
         print(f"Error connecting to MariaDB Platform: {e}")
 
     tasks = cursor.fetchall()
+
+    if len(tasks) == 0:
+        print("There are no tasks yet. Try adding one!")
+        return
+
+    print("\t---- All tasks ----\n")
 
     for categoryId, title, content, deadline, isDone in tasks:
         printTask(getCatName(categoryId), title, content, deadline, isDone, tabCount=1)
@@ -506,7 +511,11 @@ def viewTaskCalendar():
         print("\tInput not recognized\n")
         return
 
-    print("\t---- All tasks ----\n")
+    if len(groupedTasks) == 0:
+        print("\tThere are no tasks yet. Try adding one!")
+        return
+
+    print("\t---- Task calendar ----\n")
 
     for timeFrame, tasks in groupedTasks.items():
         print(f"\t{timeFrame or '*NO DEADLINE*'}\n")
