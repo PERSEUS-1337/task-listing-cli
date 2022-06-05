@@ -33,7 +33,6 @@ def dateInput():    # asks the user for a Date (Deadline)
             continue
         
 
-
 # ernest
 def getCatName(catID):  # returns the category_name, accepts category_id as parameter
     if (catID == None): return None     # No Category
@@ -48,32 +47,29 @@ def getCatName(catID):  # returns the category_name, accepts category_id as para
 
 # ernest
 def chooseFromList(type): # lists tasks/categories with index, to make it easier for the user to select.
-    try:
-        if (type == 0) : # type = 0 is for category
-            try:
-                cursor.execute(
-                    "SELECT name, category_id, description FROM category ORDER BY name"
-                )
-            except mariadb.Error as e:
-                print(f"Error connecting to MariaDB Platform: {e}")
+    if (type == 0) : # type = 0 is for category
+        try:
+            cursor.execute(
+                "SELECT name, category_id, description FROM category ORDER BY name"
+            )
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
 
-        elif (type == 1) : # type = 1 is for task
-            try:
-                cursor.execute(
-                    "SELECT title, task_id, content FROM task ORDER BY title"
-                )
-            except mariadb.Error as e:
-                print(f"Error connecting to MariaDB Platform: {e}")
-        elif (type == 2) : # type = 2 addCategToTask
-            try:
-                cursor.execute(
-                    "SELECT title, task_id, content, category_id FROM task WHERE category_id IS NULL ORDER BY title DESC"
-                )
-            except mariadb.Error as e:
-                print(f"Error connecting to MariaDB Platform: {e}")
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-    
+    elif (type == 1) : # type = 1 is for task
+        try:
+            cursor.execute(
+                "SELECT title, task_id, content FROM task ORDER BY title"
+            )
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+    elif (type == 2) : # type = 2 addCategToTask
+        try:
+            cursor.execute(
+                "SELECT title, task_id, content, category_id FROM task WHERE category_id IS NULL ORDER BY title DESC"
+            )
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+
     query = cursor.fetchall()
     index = 0                   
 
@@ -83,7 +79,7 @@ def chooseFromList(type): # lists tasks/categories with index, to make it easier
         index += 1
 
     if (index == 0):
-        print("Empty...")
+        print("Tasks/Categories are empty. Add entries first...")
         return None
 
     while (True): # prevents out of bound index inputs
@@ -383,11 +379,9 @@ def markTaskAsDone():
 # resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    categoryChoice = chooseFromList(0)      # Gets category details (name, id, desc) and stores it in an array
-
-    if (categoryChoice == None):
-        return
-    else:
+    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
+        categoryChoice = chooseFromList(0)      # Gets category details (name, id, desc) and stores it in an array
+        # print(categoryChoice)
         print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
 
         try:
@@ -426,44 +420,43 @@ def createCategory():
 # resty
 def editCategory():
     print("\t---- Edit category ----\n")
-    args = ()
-    attrib = ''
 
-    categoryChoice = chooseFromList(0)
-    choiceInput = int(input("\n\t[1] Category name\n\t[2] Category description\n\nWhat do you want to edit? [Write 0 to EXIT): "))
+    if chooseFromList(0) != None:           # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
+        categoryChoice = chooseFromList(0)
+        args = ()
+        attrib = ''
 
-    if (choiceInput == 1): 
-        changeNameInput = input(">> Enter new category name: ")
-        attrib = 'name'
-        args = (changeNameInput, categoryChoice[1])         # select 1 for id
+        choiceInput = int(input("\n\t[1] Category name\n\t[2] Category description\n\nWhat do you want to edit? [Write 0 to EXIT): "))
 
-    elif (choiceInput == 2):
-        changeDescInput = input(">> Enter new category description: ")
-        attrib = 'category'
-        args = (changeDescInput, categoryChoice[1])         # select 1 for id
-    
-    elif (choiceInput == 0):
-        return
+        if (choiceInput == 1): 
+            changeNameInput = input(">> Enter new category name: ")
+            attrib = 'name'
+            args = (changeNameInput, categoryChoice[1])         # select 1 for id
 
-    try:
-        cursor.execute("UPDATE category SET " + attrib + " = (%s) WHERE category_id = (%s)", args)
-        connection.commit()
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}") 
+        elif (choiceInput == 2):
+            changeDescInput = input(">> Enter new category description: ")
+            attrib = 'category'
+            args = (changeDescInput, categoryChoice[1])         # select 1 for id
+        
+        elif (choiceInput == 0):
+            return
+
+        try:
+            cursor.execute("UPDATE category SET " + attrib + " = (%s) WHERE category_id = (%s)", args)
+            connection.commit()
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}") 
 
 
 # resty
 def deleteCategory():
     print("\t---- Delete category ----\n")
-    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
 
-    if categoryChoice == None:
-        return
-    else:
+    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
+        categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
         try:
             cursor.execute("UPDATE task SET category_id = NULL WHERE category_id = (%s)", (categoryChoice[1],))
             cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
-            
         except mariadb.Error as e:
             print(f"Error connecting to MariaDB Platform: {e}")
 
@@ -473,26 +466,28 @@ def deleteCategory():
 # resty
 def addTaskToCategory():
     print("\t---- Add Task to Category ----\n")
-    print("(Select task to Categorize)")
-    taskChoice = chooseFromList(2)
-    
-    print("\n(Select task to Categorize)")
-    categoryChoice = chooseFromList(0)
-    if(categoryChoice == None):
-        return
-    else:
-        print(taskChoice[0])
-        print(categoryChoice[0])
 
-        args = (categoryChoice[1], taskChoice[1])
-        try:
-            cursor.execute("UPDATE task SET category_id = (%s) WHERE task_id = (%s)", args)
-        except mariadb.Error as e:
-            print(f"Error connecting to MariaDB Platform: {e}")
+    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
+        print("(Select task to Categorize)")
+        taskChoice = chooseFromList(2)
+        
+        print("\n(Select task to Categorize)")
+        categoryChoice = chooseFromList(0)
+        if(categoryChoice == None):
+            return
+        else:
+            print(taskChoice[0])
+            print(categoryChoice[0])
 
-        print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
+            args = (categoryChoice[1], taskChoice[1])
+            try:
+                cursor.execute("UPDATE task SET category_id = (%s) WHERE task_id = (%s)", args)
+            except mariadb.Error as e:
+                print(f"Error connecting to MariaDB Platform: {e}")
 
-        connection.commit()
+            print("\t\nSuccessfully added Task: '" + taskChoice[0] + "' to Category: [" + categoryChoice[0] + "]")
+
+            connection.commit()
 
 
 # garth
