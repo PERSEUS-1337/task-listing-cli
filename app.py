@@ -499,7 +499,8 @@ def viewTaskCalendar():
     print("\t• Day (d)")
     print("\t• Month (m)")
 
-    timeFrameCode = askInput("Enter time frame code", tabCount=1)
+    timeFrameCode = input("\n\tEnter time frame code: ")
+    print()
 
     if timeFrameCode == "d":
         groupedTasks = getGroupedTasksBy("day")
@@ -560,23 +561,14 @@ def printActionsList():
 
 
 # garth
-def askInput(prompt, tabCount=0):
-    indent = "\t" * tabCount
-
-    inputString = input(f"\n{indent}{prompt}: ")
-    print()
-
-    return inputString
-
-
-# garth
 def main():
     while True:
         print("\n==== Task Listing CLI ====\n")
 
         printActionsList()
 
-        chosenActionCode = askInput("Enter action code")
+        chosenActionCode = input(f"\nEnter action code: ")
+        print()
 
         if chosenActionCode in actions:
             actions[chosenActionCode]["function"]()
