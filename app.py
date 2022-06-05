@@ -89,7 +89,10 @@ def chooseFromList(type): # lists tasks/categories with index, to make it easier
             if (selected == "!NULL"): return None # No category
         elif (type == 1 or type == 2): selected = input("Enter the index of the chosen task: ") # for task
 
-        if int(selected) in range(0, index): return query[int(selected)] # checks if input is a proper index
+        if selected.isdigit() and int(selected) in range(0, index):
+            return query[int(selected)]  # checks if input is a proper index
+        else:
+            print("Invalid index")
 
 
 # ernest
