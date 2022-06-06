@@ -383,8 +383,9 @@ def markTaskAsDone():
 # resty
 def viewCategory():
     print("\t---- All categories ----\n")
-    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
-        categoryChoice = chooseFromList(0)      # Gets category details (name, id, desc) and stores it in an array
+    
+    categoryChoice = chooseFromList(0)      # Gets category details (name, id, desc) and stores it in an array
+    if categoryChoice != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
         # print(categoryChoice)
         print("\t[" + categoryChoice[0] + "]\n\tDescription: " + categoryChoice[2])     # 0 for name, 2 for description
 
@@ -438,11 +439,13 @@ def editCategory():
 
         if (choiceInput == 1): 
             changeNameInput = input(">> Enter new category name: ")
+            if (changeNameInput == ""): changeNameInput = "Category {}".format(categoryChoice[1])
             attrib = 'name'
             args = (changeNameInput, categoryChoice[1])         # select 1 for id
 
         elif (choiceInput == 2):
             changeDescInput = input(">> Enter new category description: ")
+            if (changeDescInput == ""): changeDescInput = None
             attrib = 'category'
             args = (changeDescInput, categoryChoice[1])         # select 1 for id
         
