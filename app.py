@@ -305,7 +305,8 @@ def editTask():
 
         elif (choice == "2"): # Content
             newContent = input("New Content [Write !NULL for NULL]: ")
-            updateSQL(newContent, task, 'content')
+            if (newContent == ""): print("Can't be blank. Write !NULL for NULL.")
+            else: updateSQL(newContent, task, 'content')
         elif (choice == "3"): # Category
             category = chooseFromList(0)
             if (category != None): category = category[1]
