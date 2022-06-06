@@ -46,3 +46,7 @@ SHOW variables WHERE `variable_name` IN ("hostname", "port");
 ```sh
 python app.py
 ```
+
+## Rerun
+
+If you have done the initial setup before, you can rerun the application again by simply doing steps 2 and 6.
