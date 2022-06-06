@@ -202,7 +202,7 @@ def getGroupedTasksBy(chosenTimeFrameType):
     return groupedTasks
 
 
-# ernest
+# garth
 def printTask(categoryName, title, content, deadline, isDone, tabCount=0):
     indent = "\t" * tabCount
 
@@ -406,17 +406,21 @@ def viewCategory():
 # resty
 def createCategory():
     print("---- Create Category ----\n")
-    category_input = input("Enter the category title: ")
-    descripton_input = input("(Optional) Description: ")
-    
     try:
-        cursor.execute("SELECT MAX(category_id)+1 FROM category")       # To get new category_id: Get the highest category_id in category table then add one.
-        id = cursor.fetchone()[0]       # Get the first value (which is the max value returned) using 0
-
-        args = (id, category_input, descripton_input)       # Values of the new category in tuple
-        cursor.execute("INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args)     # Insert the values of the new category to the category table
+        cursor.execute("SELECT MAX(category_id)+1 FROM category")           # To get new category_id: Get the highest category_id in category table then add one.
+        id = cursor.fetchone()[0]                                           # Get the first value (which is the max value returned) using 0
+        if (id == None): id = 0                                             # No categories yet hence it returns None
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}") 
+
+    category_input = input("Enter the category title: ")                    # get category title
+    if (category_input == ""): category_input = "Category {}".format(id)    # if there is no input, default to CATEGORY ID NUMBER
+
+    descripton_input = input("(Optional) Description: ")                    # if there is no input, default to None
+    if (descripton_input == ""): descripton_input = None
+
+    args = (id, category_input, descripton_input)                           # Values of the new category in tuple
+    cursor.execute("INSERT INTO category(category_id, name, description) VALUES(%s, %s, %s)", args)     # Insert the values of the new category to the category table
     
     connection.commit()
 
@@ -425,12 +429,12 @@ def createCategory():
 def editCategory():
     print("\t---- Edit category ----\n")
 
-    if chooseFromList(0) != None:           # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
-        categoryChoice = chooseFromList(0)
+    categoryChoice = chooseFromList(0)
+    if categoryChoice != None:           # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
         args = ()
         attrib = ''
 
-        choiceInput = int(input("\n\t[1] Category name\n\t[2] Category description\n\nWhat do you want to edit? [Write 0 to EXIT): "))
+        choiceInput = int(input("\n\t[1] Category name\n\t[2] Category description\n\nWhat do you want to edit? [Write 0 to EXIT]: "))
 
         if (choiceInput == 1): 
             changeNameInput = input(">> Enter new category name: ")
@@ -456,8 +460,8 @@ def editCategory():
 def deleteCategory():
     print("\t---- Delete category ----\n")
 
-    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
-        categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
+    categoryChoice = chooseFromList(0)        # Gets category details (name, id, desc) and stores it in an array
+    if categoryChoice != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
         try:
             cursor.execute("UPDATE task SET category_id = NULL WHERE category_id = (%s)", (categoryChoice[1],))
             cursor.execute("DELETE FROM category WHERE category_id = (%s)", (categoryChoice[1],))
@@ -471,15 +475,12 @@ def deleteCategory():
 def addTaskToCategory():
     print("\t---- Add Task to Category ----\n")
 
-    if chooseFromList(0) != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
-        print("(Select task to Categorize)")
-        taskChoice = chooseFromList(2)
-        
+    print("(Select task to Categorize)")
+    taskChoice = chooseFromList(2)
+    if taskChoice != None:            # chooseFromList returns None if there are no entries in the database and gives appropriate prompts
         print("\n(Select task to Categorize)")
         categoryChoice = chooseFromList(0)
-        if(categoryChoice == None):
-            return
-        else:
+        if categoryChoice != None:
             print(taskChoice[0])
             print(categoryChoice[0])
 
